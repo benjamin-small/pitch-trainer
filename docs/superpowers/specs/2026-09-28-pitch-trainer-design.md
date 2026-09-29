@@ -40,14 +40,16 @@ pitch-trainer/
         ├── lib/engine/         wasm-pack output (generated, gitignored)
         ├── lib/audio.ts        AudioContext, buffer playback, AnalyserNode
         ├── lib/noteVisuals.ts  Pitch class → { color, shape }
+        ├── lib/shapes.ts       Shape rendering
+        ├── lib/types.ts        Shared TypeScript types
+        ├── lib/trainer.ts      Test state and round orchestration
         ├── lib/storage.ts      Versioned localStorage save/load
+        ├── lib/answers.ts      Answer button labels and logic
         ├── App.svelte          Start gate, mode navigation
         └── components/
             ├── Explore.svelte
             ├── TestRunner.svelte
-            ├── UpDownPanel.svelte
-            ├── PickTwoPanel.svelte
-            ├── SequencePanel.svelte
+            ├── AnswerButtons.svelte
             ├── Waveform.svelte
             └── NoteGlyph.svelte
 ```
@@ -57,16 +59,19 @@ pitch-trainer/
 ### Engine API (wasm-bindgen surface)
 
 ```
-Engine::new(sample_rate: f32, seed: u64, saved_state_json: Option<String>) -> Engine
-Engine::new_round(&mut self, test: TestKind) -> RoundView
-Engine::round_audio(&self) -> Float32Array           // current round's challenge audio
+Engine::new(sample_rate: f32, seed: u32, saved_state_json: Option<String>) -> Engine
+Engine::newRound(&mut self, kind: string) -> RoundView
+Engine::roundAudio(&self) -> Float32Array           // current round's challenge audio
 Engine::answer(&mut self, answer: u32) -> AnswerResult
-Engine::note_audio(&self, midi: u8) -> Float32Array  // single note, for Explore
-Engine::scale_audio(&self, from: u8, to: u8) -> Float32Array
-Engine::state_json(&self) -> String                   // difficulty + stats, for persistence
+Engine::progress(&self, kind: string) -> Progress
+Engine::noteAudio(&self, midi: u8) -> Float32Array  // single note, for Explore
+Engine::scaleNotes(&self, from: u8, to: u8) -> Array<u8>
+Engine::scaleAudio(&self, from: u8, to: u8) -> Float32Array
+Engine::stateJson(&self) -> String                   // difficulty + stats, for persistence
 ```
 
-- `TestKind`: `UpDown | PickTwo | Sequence`.
+- `seed` is u32 (so JS passes a number, not a BigInt; widened to u64 internally).
+- `kind`: `"upDown" | "pickTwo" | "sequence"`.
 - `RoundView` (sent to UI before answering): test kind, number of answer options, prompt text, number of notes in the sequence (for placeholders), note timing (onsets in seconds) so the UI can sync placeholder highlights. **Does not include note identities or the correct answer.**
 - `AnswerResult`: `correct: bool`, `correct_answer: u32`, the round's notes (MIDI numbers + onsets) for the reveal, new level, best level.
 - Answer encoding: UpDown `0 = Higher, 1 = Lower`; PickTwo `0 = First, 1 = Second`; Sequence `0..N-1` = position.
@@ -91,6 +96,8 @@ All rounds follow the same flow:
 2. **Answer:** buttons unlock when playback ends. **Replay** is available up to 2 times per round (buttons lock during replay).
 3. **Reveal:** show correct/incorrect and the correct answer, then replay the round with each note's glyph (shape + color + name) appearing on its onset and the live waveform visible.
 4. **Next:** a Next button (or Space) starts a new round.
+
+JSON field names are camelCase. Kinds are `"upDown" | "pickTwo" | "sequence"`.
 
 ### Up/Down
 
@@ -124,7 +131,7 @@ All rounds follow the same flow:
 | 7 | 8 | 2 |
 | 8 | 8 | 1 |
 
-  Feasibility: 8 notes with min spacing 3 need a 21-semitone span, which fits within the 36-semitone range. All table rows are satisfiable. Generation uses rejection sampling with a bounded retry count, then a deterministic fallback construction (evenly spaced, one pair at exactly `d`) so it never fails.
+  Feasibility: 8 notes with min spacing 3 need a 21-semitone span, which fits within the 36-semitone range. All table rows are satisfiable. Generation builds sorted gaps directly: one gap is exactly `d`, the others are `d` plus 0–4 random extra semitones within the range budget. The notes are then shuffled. This always succeeds.
 
 ## Adaptive difficulty
 
@@ -187,14 +194,14 @@ Colors are HSL with fixed saturation/lightness tuned for contrast on both light 
 ## Testing
 
 **Rust (`cargo test`, native target):**
-- notes: A4 = 440 Hz, C4 ≈ 261.63 Hz, name formatting for every note in range.
+- notes: A4 = 440 Hz, C4 ≈ 261.63 Hz.
 - synth: buffer length = expected samples, peak ≤ 0.9, first and last samples == 0, no NaN.
 - rounds: for each test × each level × many seeds, every note is within C3–C6. Up/Down and Pick Two gaps equal the level gap. Sequence notes are distinct, min spacing == d exactly, length == N. The target is one of the sequence notes, and `correct_answer` matches its position. Grading returns correct only for the right answer.
 - difficulty: 3 correct → level up, 1 wrong → level down, clamping at 1 and 8, best_level tracking.
 - state: `state_json` → `Engine::new(..., Some(json))` round-trips. Garbage JSON → defaults.
 
 **Web (Vitest):**
-- `noteVisuals`: all 12 pitch classes mapped, shapes unique, colors unique.
+- `noteVisuals`: name formatting for every note in range, all 12 pitch classes mapped, shapes unique, colors unique.
 - `storage`: save/load round-trip, corrupt data → null, wrong version → null.
 
 **Manual:** run the app and play several rounds of each test. Check that nothing leaks visually during challenges, that the reveal replay shows glyphs in sync, and that reload restores levels.
