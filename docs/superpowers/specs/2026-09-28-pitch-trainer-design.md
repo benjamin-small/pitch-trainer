@@ -85,7 +85,7 @@ Randomness uses a seeded PRNG (e.g. `rand_pcg`/`fastrand` with explicit seed). J
 - Frequency: `440 * 2^((midi - 69) / 12)`.
 - Timbre: sine fundamental + 2nd harmonic (0.3) + 3rd harmonic (0.15), normalized so peak ≤ 0.9.
 - Envelope: 10 ms linear attack, sustain, 80 ms release to exactly zero. Buffers start and end at 0.
-- Timing: note duration **0.6 s**, inter-note gap **0.15 s**, pause before the target note **0.8 s**.
+- Timing: note duration **0.6 s**, inter-note gap **0.15 s**, pause before the target note **1.5 s**.
 - Sample rate is whatever `AudioContext.sampleRate` reports, passed to the engine.
 
 ## Test types
@@ -95,7 +95,7 @@ All rounds follow the same flow:
 1. **Play:** the engine renders the round audio and the UI plays it. The UI shows only neutral placeholders (grey slots that pulse on each note onset). No colors, shapes, names, or waveform.
 2. **Answer:** buttons unlock when playback ends. **Replay** is available up to 2 times per round (buttons lock during replay).
 3. **Reveal:** show correct/incorrect and the correct answer, then replay the round with each note's glyph (shape + color + name) appearing on its onset and the live waveform visible.
-4. **Next:** a Next button (or Space) starts a new round.
+4. **Next:** a Next button (or Space) starts a new round. Both work while the reveal is still replaying, cutting it short.
 
 JSON field names are camelCase. Kinds are `"upDown" | "pickTwo" | "sequence"`.
 
@@ -108,14 +108,14 @@ JSON field names are camelCase. Kinds are `"upDown" | "pickTwo" | "sequence"`.
 
 ### Pick Two
 
-- Audio: note A, gap, note B, 0.8 s pause, target (A or B, uniformly).
+- Audio: note A, gap, note B, 1.5 s pause, target (A or B, uniformly).
 - Answer: First / Second.
 - Generation: A and B differ by exactly `g` semitones (direction random), both in range.
 - Level → gap: same table as Up/Down (12, 9, 7, 5, 4, 3, 2, 1).
 
 ### Sequence
 
-- Audio: N notes separated by gaps, 0.8 s pause, target (one of the N, uniformly).
+- Audio: N notes separated by gaps, 1.5 s pause, target (one of the N, uniformly).
 - Answer: position 1…N.
 - Generation: N distinct notes, all in range. The minimum pairwise distance between any two sequence notes is at least `d`, and at least one pair is exactly `d` apart. This makes the level's spacing the actual closest distinction.
 - Levels (length N, min spacing d):

@@ -6,7 +6,7 @@ use crate::notes::frequency;
 
 pub const NOTE_SECS: f32 = 0.6;
 pub const GAP_SECS: f32 = 0.15;
-pub const TARGET_PAUSE_SECS: f32 = 0.8;
+pub const TARGET_PAUSE_SECS: f32 = 1.5;
 pub const PEAK: f32 = 0.9;
 const ATTACK_SECS: f32 = 0.010;
 const RELEASE_SECS: f32 = 0.080;
@@ -97,7 +97,7 @@ mod tests {
         assert!(close(onsets[0], 0.0));
         assert!(close(onsets[1], 0.75));
         assert!(close(onsets[2], 1.5));
-        assert!(close(onsets[3], 1.5 + 0.6 + 0.8));
+        assert!(close(onsets[3], 1.5 + 0.6 + 1.5));
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn sequence_length_ends_with_last_note() {
         let buf = render(&timeline(&[60, 62, 64], Some(62)), SR);
-        let last_start = (2.9 * SR).round() as usize;
+        let last_start = (3.6 * SR).round() as usize;
         assert_eq!(buf.len(), last_start + (0.6 * SR).round() as usize);
     }
 

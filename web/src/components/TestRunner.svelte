@@ -47,14 +47,20 @@
     return index === 0 ? '1st' : '2nd';
   }
 
+  /** Bumped on every playback so a superseded playback's cleanup can't touch the newer one. */
+  let playback = 0;
+
   async function playChallenge() {
     if (!view) return;
+    const id = ++playback;
     phase = 'playing';
     try {
       await audio.play(trainer.roundAudio(), view.onsets, (i) => (cue = i));
     } finally {
-      cue = null;
-      if (phase === 'playing') phase = 'answering';
+      if (id === playback) {
+        cue = null;
+        phase = 'answering';
+      }
     }
   }
 
@@ -86,6 +92,7 @@
   async function playReveal() {
     if (!result) return;
     const notes = result.notes;
+    const id = ++playback;
     phase = 'revealing';
     revealed = 0;
     try {
@@ -98,9 +105,11 @@
         },
       );
     } finally {
-      cue = null;
-      revealed = notes.length;
-      if (phase === 'revealing') phase = 'revealed';
+      if (id === playback) {
+        cue = null;
+        revealed = notes.length;
+        phase = 'revealed';
+      }
     }
   }
 
@@ -108,7 +117,8 @@
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
     const onButton = (event.target as HTMLElement | null)?.closest('button');
     if (event.key === ' ') {
-      if (phase === 'ready' || phase === 'revealed') {
+      // Space advances from the start screen and from the reveal, even mid-replay.
+      if (phase === 'ready' || phase === 'revealing' || phase === 'revealed') {
         event.preventDefault();
         nextRound();
       } else if (!onButton) {
@@ -202,7 +212,7 @@
       <AnswerButtons {options} disabled={true} {chosen} correct={result?.correctAnswer ?? null} onChoose={choose} />
       <div class="row">
         <button class="btn" disabled={phase !== 'revealed'} onclick={() => void playReveal()}>Hear again</button>
-        <button class="btn primary" disabled={phase !== 'revealed'} onclick={nextRound}>Next</button>
+        <button class="btn primary" onclick={nextRound}>Next</button>
       </div>
     {/if}
   </div>
