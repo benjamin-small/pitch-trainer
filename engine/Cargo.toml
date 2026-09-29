@@ -1,0 +1,20 @@
+[package]
+name = "pitch_engine"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.129"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde-wasm-bindgen = "0.6.5"
+
+[profile.release]
+opt-level = "s"
+
+# Skip wasm-opt so builds don't need to download binaryen.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
