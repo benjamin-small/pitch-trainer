@@ -19,7 +19,13 @@ pub struct Progress {
 
 impl Default for Progress {
     fn default() -> Self {
-        Progress { level: MIN_LEVEL, streak: 0, best_level: MIN_LEVEL, attempts: 0, correct: 0 }
+        Progress {
+            level: MIN_LEVEL,
+            streak: 0,
+            best_level: MIN_LEVEL,
+            attempts: 0,
+            correct: 0,
+        }
     }
 }
 
@@ -58,13 +64,20 @@ mod tests {
     use super::*;
 
     fn at_level(level: u8) -> Progress {
-        Progress { level, best_level: level, ..Progress::default() }
+        Progress {
+            level,
+            best_level: level,
+            ..Progress::default()
+        }
     }
 
     #[test]
     fn starts_at_level_one() {
         let p = Progress::default();
-        assert_eq!((p.level, p.streak, p.best_level, p.attempts, p.correct), (1, 0, 1, 0, 0));
+        assert_eq!(
+            (p.level, p.streak, p.best_level, p.attempts, p.correct),
+            (1, 0, 1, 0, 0)
+        );
     }
 
     #[test]
@@ -120,11 +133,31 @@ mod tests {
 
     #[test]
     fn sanitized_repairs_bad_values() {
-        let bad = Progress { level: 0, streak: 9, best_level: 20, attempts: 2, correct: 5 };
+        let bad = Progress {
+            level: 0,
+            streak: 9,
+            best_level: 20,
+            attempts: 2,
+            correct: 5,
+        };
         let fixed = bad.sanitized();
-        assert_eq!(fixed, Progress { level: 1, streak: 2, best_level: 8, attempts: 2, correct: 2 });
+        assert_eq!(
+            fixed,
+            Progress {
+                level: 1,
+                streak: 2,
+                best_level: 8,
+                attempts: 2,
+                correct: 2
+            }
+        );
 
-        let behind = Progress { level: 5, best_level: 1, ..Progress::default() }.sanitized();
+        let behind = Progress {
+            level: 5,
+            best_level: 1,
+            ..Progress::default()
+        }
+        .sanitized();
         assert_eq!(behind.best_level, 5);
     }
 }

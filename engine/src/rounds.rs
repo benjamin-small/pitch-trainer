@@ -1,4 +1,7 @@
 //! Generates rounds for the three test types and grades answers.
+//!
+//! Answer codes: Up/Down 0 = higher, 1 = lower; Pick Two 0 = first, 1 = second;
+//! Sequence 0..N-1 = position in the sequence.
 
 use serde::{Deserialize, Serialize};
 
@@ -31,8 +34,16 @@ impl TestKind {
 /// Semitone gap between the two notes (Up/Down, Pick Two), indexed by level - 1.
 pub const PAIR_GAPS: [u8; 8] = [12, 9, 7, 5, 4, 3, 2, 1];
 /// (length, closest spacing in semitones) for Sequence, indexed by level - 1.
-pub const SEQUENCE_LEVELS: [(usize, u8); 8] =
-    [(3, 5), (4, 5), (5, 5), (6, 4), (7, 3), (8, 3), (8, 2), (8, 1)];
+pub const SEQUENCE_LEVELS: [(usize, u8); 8] = [
+    (3, 5),
+    (4, 5),
+    (5, 5),
+    (6, 4),
+    (7, 3),
+    (8, 3),
+    (8, 2),
+    (8, 1),
+];
 /// Most extra semitones added to any non-tight gap in a sequence, to keep runs compact.
 const MAX_EXTRA_SPACING: u32 = 4;
 
@@ -43,7 +54,7 @@ pub struct Round {
     pub notes: Vec<u8>,
     /// The note played again after the pause (Pick Two, Sequence).
     pub target: Option<u8>,
-    /// Correct answer code (see module docs on answer codes).
+    /// Correct answer code (see the module docs for the encoding).
     pub answer: u32,
 }
 
@@ -79,19 +90,33 @@ impl Round {
 /// Two notes exactly `gap` apart in random order. Returns (first, second).
 fn pair(gap: u8, rng: &mut Rng) -> (u8, u8) {
     let low = rng.range(LOWEST as u32, (HIGHEST - gap) as u32) as u8;
-    if rng.coin() { (low, low + gap) } else { (low + gap, low) }
+    if rng.coin() {
+        (low, low + gap)
+    } else {
+        (low + gap, low)
+    }
 }
 
 fn up_down(gap: u8, rng: &mut Rng) -> Round {
     let (a, b) = pair(gap, rng);
-    Round { kind: TestKind::UpDown, notes: vec![a, b], target: None, answer: if b > a { 0 } else { 1 } }
+    Round {
+        kind: TestKind::UpDown,
+        notes: vec![a, b],
+        target: None,
+        answer: if b > a { 0 } else { 1 },
+    }
 }
 
 fn pick_two(gap: u8, rng: &mut Rng) -> Round {
     let (a, b) = pair(gap, rng);
     let pick = rng.range(0, 1);
     let target = if pick == 0 { a } else { b };
-    Round { kind: TestKind::PickTwo, notes: vec![a, b], target: Some(target), answer: pick }
+    Round {
+        kind: TestKind::PickTwo,
+        notes: vec![a, b],
+        target: Some(target),
+        answer: pick,
+    }
 }
 
 /// `len` distinct notes whose closest pair is exactly `spacing` apart, in random order.
@@ -117,7 +142,12 @@ fn sequence(len: usize, spacing: u8, rng: &mut Rng) -> Round {
     }
     rng.shuffle(&mut notes);
     let answer = rng.range(0, len as u32 - 1);
-    Round { kind: TestKind::Sequence, target: Some(notes[answer as usize]), notes, answer }
+    Round {
+        kind: TestKind::Sequence,
+        target: Some(notes[answer as usize]),
+        notes,
+        answer,
+    }
 }
 
 #[cfg(test)]
@@ -169,7 +199,10 @@ mod tests {
             assert_eq!(r.notes.len(), 2);
             assert!(in_range(&r.notes));
             assert_eq!(r.options(), 2);
-            assert_eq!(r.notes[0].abs_diff(r.notes[1]), PAIR_GAPS[level as usize - 1]);
+            assert_eq!(
+                r.notes[0].abs_diff(r.notes[1]),
+                PAIR_GAPS[level as usize - 1]
+            );
             assert_eq!(r.target, Some(r.notes[r.answer as usize]));
             saw[r.answer as usize] = true;
         });
@@ -206,8 +239,16 @@ mod tests {
     #[test]
     fn out_of_range_levels_are_clamped() {
         let mut rng = Rng::new(0);
-        assert_eq!(Round::generate(TestKind::Sequence, 0, &mut rng).notes.len(), 3);
-        assert_eq!(Round::generate(TestKind::Sequence, 99, &mut rng).notes.len(), 8);
+        assert_eq!(
+            Round::generate(TestKind::Sequence, 0, &mut rng).notes.len(),
+            3
+        );
+        assert_eq!(
+            Round::generate(TestKind::Sequence, 99, &mut rng)
+                .notes
+                .len(),
+            8
+        );
     }
 
     #[test]
@@ -232,7 +273,10 @@ mod tests {
             let json = serde_json::to_string(&kind).unwrap();
             assert_eq!(TestKind::parse(json.trim_matches('"')), Some(kind));
         }
-        assert_eq!(serde_json::to_string(&TestKind::UpDown).unwrap(), "\"upDown\"");
+        assert_eq!(
+            serde_json::to_string(&TestKind::UpDown).unwrap(),
+            "\"upDown\""
+        );
         assert_eq!(TestKind::parse("nope"), None);
     }
 }

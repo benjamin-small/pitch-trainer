@@ -50,12 +50,16 @@
   async function playChallenge() {
     if (!view) return;
     phase = 'playing';
-    await audio.play(trainer.roundAudio(), view.onsets, (i) => (cue = i));
-    cue = null;
-    if (phase === 'playing') phase = 'answering';
+    try {
+      await audio.play(trainer.roundAudio(), view.onsets, (i) => (cue = i));
+    } finally {
+      cue = null;
+      if (phase === 'playing') phase = 'answering';
+    }
   }
 
   function nextRound() {
+    (document.activeElement as HTMLElement | null)?.blur();
     view = trainer.newRound(kind);
     result = null;
     chosen = null;
@@ -84,27 +88,31 @@
     const notes = result.notes;
     phase = 'revealing';
     revealed = 0;
-    await audio.play(
-      trainer.roundAudio(),
-      notes.map((n) => n.onset),
-      (i) => {
-        cue = i;
-        revealed = i + 1;
-      },
-    );
-    cue = null;
-    revealed = notes.length;
-    if (phase === 'revealing') phase = 'revealed';
+    try {
+      await audio.play(
+        trainer.roundAudio(),
+        notes.map((n) => n.onset),
+        (i) => {
+          cue = i;
+          revealed = i + 1;
+        },
+      );
+    } finally {
+      cue = null;
+      revealed = notes.length;
+      if (phase === 'revealing') phase = 'revealed';
+    }
   }
 
   function onKeydown(event: KeyboardEvent) {
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
     const onButton = (event.target as HTMLElement | null)?.closest('button');
     if (event.key === ' ') {
-      if (onButton) return; // let the focused button handle Space itself
       if (phase === 'ready' || phase === 'revealed') {
         event.preventDefault();
         nextRound();
+      } else if (!onButton) {
+        event.preventDefault(); // avoid page scroll
       }
       return;
     }
@@ -160,7 +168,7 @@
           </div>
         {/each}
       </div>
-      <p class="prompt">
+      <p class="prompt" aria-live="polite">
         {#if phase === 'playing'}
           Listen…
         {:else if result}

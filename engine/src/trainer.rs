@@ -80,7 +80,10 @@ impl fmt::Display for TrainerError {
         match self {
             TrainerError::NoActiveRound => write!(f, "no round is waiting for an answer"),
             TrainerError::AnswerOutOfRange { answer, options } => {
-                write!(f, "answer {answer} is out of range (round has {options} options)")
+                write!(
+                    f,
+                    "answer {answer} is out of range (round has {options} options)"
+                )
             }
         }
     }
@@ -153,7 +156,12 @@ impl Trainer {
         progress.record(correct);
         let progress = *progress;
         self.answered = true;
-        Ok(AnswerResult { correct, correct_answer, notes, progress })
+        Ok(AnswerResult {
+            correct,
+            correct_answer,
+            notes,
+            progress,
+        })
     }
 
     pub fn note_audio(&self, midi: u8) -> Vec<f32> {
@@ -202,7 +210,10 @@ mod tests {
         assert!(v.has_target);
         assert!(!v.prompt.is_empty());
         let json = serde_json::to_string(&v).unwrap();
-        assert!(!json.contains("midi") && !json.contains("answer"), "view leaks: {json}");
+        assert!(
+            !json.contains("midi") && !json.contains("answer"),
+            "view leaks: {json}"
+        );
     }
 
     #[test]
@@ -254,14 +265,23 @@ mod tests {
         t.new_round(TestKind::UpDown);
         t.answer(0).unwrap();
         assert_eq!(t.answer(0), Err(TrainerError::NoActiveRound));
-        assert!(t.round_audio().is_ok(), "audio stays available for the reveal");
+        assert!(
+            t.round_audio().is_ok(),
+            "audio stays available for the reveal"
+        );
     }
 
     #[test]
     fn out_of_range_answer_is_rejected_and_round_stays_open() {
         let mut t = trainer();
         t.new_round(TestKind::PickTwo);
-        assert_eq!(t.answer(2), Err(TrainerError::AnswerOutOfRange { answer: 2, options: 2 }));
+        assert_eq!(
+            t.answer(2),
+            Err(TrainerError::AnswerOutOfRange {
+                answer: 2,
+                options: 2
+            })
+        );
         assert!(t.answer(0).is_ok());
     }
 
@@ -291,8 +311,14 @@ mod tests {
         }
         let json = t.state_json();
         let restored = Trainer::new(SR, 1, Some(&json));
-        assert_eq!(restored.progress(TestKind::PickTwo), t.progress(TestKind::PickTwo));
-        assert!(json.contains("\"pickTwo\"") && json.contains("\"bestLevel\""), "{json}");
+        assert_eq!(
+            restored.progress(TestKind::PickTwo),
+            t.progress(TestKind::PickTwo)
+        );
+        assert!(
+            json.contains("\"pickTwo\"") && json.contains("\"bestLevel\""),
+            "{json}"
+        );
     }
 
     #[test]

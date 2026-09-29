@@ -73,7 +73,7 @@ Engine::stateJson(&self) -> String                   // difficulty + stats, for 
 - `seed` is u32 (so JS passes a number, not a BigInt; widened to u64 internally).
 - `kind`: `"upDown" | "pickTwo" | "sequence"`.
 - `RoundView` (sent to UI before answering): test kind, number of answer options, prompt text, number of notes in the sequence (for placeholders), note timing (onsets in seconds) so the UI can sync placeholder highlights. **Does not include note identities or the correct answer.**
-- `AnswerResult`: `correct: bool`, `correct_answer: u32`, the round's notes (MIDI numbers + onsets) for the reveal, new level, best level.
+- `AnswerResult`: `correct: bool`, `correctAnswer: u32`, the round's notes (MIDI numbers + onsets) for the reveal, new level, best level.
 - Answer encoding: UpDown `0 = Higher, 1 = Lower`; PickTwo `0 = First, 1 = Second`; Sequence `0..N-1` = position.
 - Calling `answer` with no active round, or an out-of-range answer, returns an error (JS exception). The round is consumed after one answer.
 

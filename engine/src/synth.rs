@@ -27,11 +27,17 @@ pub fn timeline(notes: &[u8], target: Option<u8>) -> Vec<NoteEvent> {
     let mut events: Vec<NoteEvent> = notes
         .iter()
         .enumerate()
-        .map(|(i, &midi)| NoteEvent { midi, onset: i as f32 * step })
+        .map(|(i, &midi)| NoteEvent {
+            midi,
+            onset: i as f32 * step,
+        })
         .collect();
     if let Some(midi) = target {
         let last_end = events.last().map_or(0.0, |e| e.onset + NOTE_SECS);
-        events.push(NoteEvent { midi, onset: last_end + TARGET_PAUSE_SECS });
+        events.push(NoteEvent {
+            midi,
+            onset: last_end + TARGET_PAUSE_SECS,
+        });
     }
     events
 }
@@ -45,7 +51,11 @@ pub fn render(events: &[NoteEvent], sample_rate: f32) -> Vec<f32> {
     let total = starts.iter().map(|s| s + note_len).max().unwrap_or(0);
     let mut out = vec![0.0; total];
     for (event, &start) in events.iter().zip(&starts) {
-        write_note(&mut out[start..start + note_len], frequency(event.midi), sample_rate);
+        write_note(
+            &mut out[start..start + note_len],
+            frequency(event.midi),
+            sample_rate,
+        );
     }
     out
 }

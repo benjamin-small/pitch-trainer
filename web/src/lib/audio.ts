@@ -21,6 +21,7 @@ export class AudioOut {
   }
 
   play(samples: Float32Array, cues: number[] = [], onCue?: (index: number) => void): Promise<void> {
+    if (this.context.state !== 'running') void this.context.resume();
     this.stop();
     const buffer = this.context.createBuffer(1, samples.length, this.context.sampleRate);
     buffer.getChannelData(0).set(samples);

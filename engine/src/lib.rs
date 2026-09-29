@@ -29,7 +29,9 @@ fn to_js<T: Serialize>(value: &T) -> Result<JsValue, JsError> {
 impl Engine {
     #[wasm_bindgen(constructor)]
     pub fn new(sample_rate: f32, seed: u32, saved_state_json: Option<String>) -> Engine {
-        Engine { trainer: Trainer::new(sample_rate, seed as u64, saved_state_json.as_deref()) }
+        Engine {
+            trainer: Trainer::new(sample_rate, seed as u64, saved_state_json.as_deref()),
+        }
     }
 
     #[wasm_bindgen(js_name = newRound)]
@@ -58,7 +60,8 @@ impl Engine {
 
     #[wasm_bindgen(js_name = scaleAudio)]
     pub fn scale_audio(&self, from: u8, to: u8) -> Vec<f32> {
-        self.trainer.render_events(&self.trainer.scale_notes(from, to))
+        self.trainer
+            .render_events(&self.trainer.scale_notes(from, to))
     }
 
     pub fn progress(&self, kind: &str) -> Result<JsValue, JsError> {
