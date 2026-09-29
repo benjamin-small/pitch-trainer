@@ -1,14 +1,23 @@
 <script lang="ts">
+  import { AudioOut } from './lib/audio';
   import { Trainer } from './lib/trainer';
+  import Explore from './components/Explore.svelte';
 
-  let status = $state('Loading engine…');
+  let audio = $state.raw<AudioOut | null>(null);
+  let trainer = $state.raw<Trainer | null>(null);
 
-  Trainer.create(48000, null)
-    .then((trainer) => {
-      const view = trainer.newRound('sequence');
-      status = `Engine ready: "${view.prompt}" ${view.options} options, ${trainer.roundAudio().length} samples`;
-    })
-    .catch((error) => (status = `Engine failed: ${error}`));
+  async function start() {
+    const out = new AudioOut();
+    await out.resume();
+    trainer = await Trainer.create(out.sampleRate, null);
+    audio = out;
+  }
 </script>
 
-<p>{status}</p>
+<main style="max-width: 900px; margin: 0 auto; padding: 16px;">
+  {#if trainer && audio}
+    <Explore {trainer} {audio} />
+  {:else}
+    <button class="btn primary" onclick={start}>Tap to start</button>
+  {/if}
+</main>
