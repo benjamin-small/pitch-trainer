@@ -1,13 +1,18 @@
 # Contributing
 
-Open an issue before substantial changes so scope and expected behavior are clear. Keep pull requests focused and include tests or documentation for changed behavior.
+Follow the [README](README.md) for the Rust, wasm-pack, and Node prerequisites.
+Keep changes focused and add tests for changed behavior. Before proposing a
+change, run:
 
-## Local setup
+```sh
+npm ci --prefix web
+cargo test --manifest-path engine/Cargo.toml --locked
+npm test --prefix web
+npm run build --prefix web
+npm run check --prefix web
+```
 
-Follow the setup instructions in `README.md`.
-
-## Validation
-
-Run the checks that apply before opening a pull request:
-
-Document and run the repository-specific validation commands before merging.
+The build generates WASM bindings required by the web typecheck. See
+[testing](docs/testing.md) for test scope and coverage, and [AGENTS.md](AGENTS.md)
+for agent constraints. Do not commit generated WASM output, build artifacts,
+credentials, or browser progress data.
