@@ -6,7 +6,9 @@
   import { TEST_INFO, answerOptions } from '../lib/answers';
   import { noteColor } from '../lib/noteVisuals';
   import AnswerButtons from './AnswerButtons.svelte';
+  import { noteDisplayName } from '../lib/pianoKeys';
   import NoteGlyph from './NoteGlyph.svelte';
+  import Piano from './Piano.svelte';
   import Waveform from './Waveform.svelte';
 
   type Phase = 'ready' | 'playing' | 'answering' | 'revealing' | 'revealed';
@@ -37,7 +39,9 @@
   const accuracy = $derived(
     progress.attempts ? Math.round((100 * progress.correct) / progress.attempts) : null,
   );
-  const cueColor = $derived(result && cue !== null ? noteColor(result.notes[cue].midi) : '#888888');
+  /** Note sounding during the reveal, if any. */
+  const sounding = $derived(result && cue !== null ? result.notes[cue].midi : null);
+  const cueColor = $derived(sounding !== null ? noteColor(sounding) : '#888888');
 
   onDestroy(() => audio.stop());
 
@@ -195,8 +199,10 @@
       <p class="prompt">Press Start (or Space) when you're ready.</p>
     {/if}
 
-    {#if showVisuals}
+    {#if showVisuals && result}
       <Waveform analyser={audio.analyser} color={cueColor} />
+      <p class="sounding">{sounding !== null ? noteDisplayName(sounding) : ''}</p>
+      <Piano active={sounding} marked={result.notes.slice(0, revealed).map((n) => n.midi)} />
     {/if}
   </section>
 
@@ -319,6 +325,13 @@
     margin: 0;
     text-align: center;
     min-height: 1.5em;
+  }
+  .sounding {
+    margin: 0;
+    min-height: 1.5em;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
   }
   .good {
     color: var(--good);
