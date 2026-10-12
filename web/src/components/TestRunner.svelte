@@ -202,7 +202,7 @@
     {#if showVisuals && result}
       <Waveform analyser={audio.analyser} color={cueColor} />
       <p class="sounding">{sounding !== null ? noteDisplayName(sounding) : ''}</p>
-      <Piano active={sounding} marked={result.notes.slice(0, revealed).map((n) => n.midi)} />
+      <Piano compact active={sounding} marked={result.notes.slice(0, revealed).map((n) => n.midi)} />
     {/if}
   </section>
 

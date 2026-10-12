@@ -7,6 +7,7 @@
     active = null,
     marked = [],
     octaveBase = null,
+    compact = false,
     onPlay,
   }: {
     /** Note to highlight as sounding now. */
@@ -15,6 +16,8 @@
     marked?: number[];
     /** Octave the typing shortcuts start from; null hides the shortcut hints. */
     octaveBase?: number | null;
+    /** Shorter keys without glyphs, for tight layouts. */
+    compact?: boolean;
     /** Called when a key is clicked; without it the keyboard is display-only. */
     onPlay?: (midi: number) => void;
   } = $props();
@@ -27,7 +30,7 @@
 </script>
 
 <div class="keyboard-scroll">
-  <div class="keyboard" style:--whites={whiteKeys.length}>
+  <div class="keyboard" class:compact style:--whites={whiteKeys.length}>
     {#each whiteKeys as midi (midi)}
       <button
         class="key white"
@@ -38,7 +41,7 @@
         disabled={!onPlay}
         onclick={() => onPlay?.(midi)}
       >
-        <NoteGlyph {midi} size={18} label={false} />
+        {#if !compact}<NoteGlyph {midi} size={18} label={false} />{/if}
         <span class="note">{noteName(midi)}</span>
         {#if midi === MIDDLE_C}<span class="middle-tag">Middle</span>{/if}
         {#if octaveBase !== null}
@@ -77,6 +80,9 @@
     display: flex;
     min-width: 600px;
     height: 170px;
+  }
+  .keyboard.compact {
+    height: 100px;
   }
   .key {
     border: 1px solid #0003;
