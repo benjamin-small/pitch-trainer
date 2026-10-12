@@ -42,8 +42,8 @@ npm exec -- vitest run --coverage --coverage.provider=v8 \
 Rust tests cover adaptive difficulty, note frequencies, deterministic random
 selection, round generation and grading, audio synthesis, state recovery, and
 trainer progress. Web tests cover answer helpers, note visuals, shape mapping,
-and versioned browser storage handling. They do not establish real-device
-playback quality or browser interaction behavior.
+Explore piano key bindings, and versioned browser storage handling. They do not
+establish real-device playback quality or browser interaction behavior.
 
 The PR workflow runs both suites, builds the WASM/Svelte app, and runs
 `svelte-check`. The current typecheck reports zero errors and two existing
